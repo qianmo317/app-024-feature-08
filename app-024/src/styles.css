@@ -202,9 +202,18 @@ textarea.input { resize: vertical; }
 
 /* ================= 打印 ================= */
 .print-area { margin-top: 10px; }
+.print-section-title { margin: 12px 0 6px; font-size: 14px; color: var(--ink); }
+.field-narrow { max-width: 190px; min-width: 120px; }
+.field-static { justify-content: flex-end; }
+.input-like {
+  padding: 7px 10px; border: 1px dashed var(--line); border-radius: 8px;
+  font-size: 14px; min-height: 36px; display: flex; align-items: center;
+  color: var(--ink); white-space: nowrap;
+}
 .sheet {
+  position: relative;
   width: 210mm; min-height: 297mm; background: #fff; margin: 0 auto 8mm;
-  padding: 10mm; display: flex; flex-wrap: wrap; gap: 4mm; align-content: flex-start;
+  padding: 10mm; display: grid; gap: 4mm; align-content: start; justify-content: start;
   box-shadow: 0 1px 6px rgba(0,0,0,.15); border: 1px solid var(--line);
 }
 .card-slot { visibility: hidden; }
@@ -218,6 +227,10 @@ textarea.input { resize: vertical; }
 .card-no { font-size: 26pt; font-weight: 800; color: #000; line-height: 1.1; }
 .card-surface { font-size: 14pt; font-weight: 600; color: #000; margin-top: 2mm; line-height: 1.45; flex: 1; }
 .card-meta { font-size: 10.5pt; color: #000; margin-top: 2mm; }
+.card-extra {
+  font-size: 9pt; color: #000; margin-top: 1.5mm;
+  display: flex; flex-wrap: wrap; gap: 1mm 4mm; align-items: center;
+}
 .card-host { font-size: 9.5pt; color: #000; margin-top: 1.5mm; text-align: right; }
 .card-tear {
   border-top: 1px dashed #aaa; margin: 2mm -1mm; position: relative;
@@ -228,6 +241,12 @@ textarea.input { resize: vertical; }
 .slip-no { font-size: 20pt; }
 .slip-answer { font-size: 15pt; font-weight: 700; letter-spacing: 1px; }
 .slip-fill { font-size: 9.5pt; color: #000; }
+.sheet-footer {
+  position: absolute; left: 10mm; right: 10mm; bottom: 3mm;
+  display: flex; justify-content: space-between; align-items: center;
+  border-top: 0.3mm solid #888; padding-top: 1.5mm;
+  font-size: 9pt; color: #000;
+}
 
 @media print {
   @page { size: A4 portrait; margin: 0; }

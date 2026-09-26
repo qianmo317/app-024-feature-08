@@ -13,6 +13,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
     cardWmm: 63, cardHmm: 135, perPage: 6,
     showAnswerSlip: true, showCutLine: true,
     hostLine: '',
+    showAuthor: false, showSource: false, showDifficulty: false, showTags: false,
+    showFooter: true, startPage: 1,
   },
   prizes: ['参与奖', '三等奖', '二等奖', '一等奖'],
 };

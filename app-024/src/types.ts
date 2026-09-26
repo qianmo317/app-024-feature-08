@@ -46,10 +46,16 @@ export type EventInfo = {
 export type PrintSetup = {
   cardWmm: number;
   cardHmm: number;
-  perPage: number;
+  perPage: number;          // 每页条数（1~24，自定义填数）
   showAnswerSlip: boolean;  // 同页双联：下联回收联（含谜底）
   showCutLine: boolean;
   hostLine: string;
+  showAuthor: boolean;      // 卡片印作者
+  showSource: boolean;      // 卡片印出处
+  showDifficulty: boolean;  // 卡片印难度
+  showTags: boolean;        // 卡片印标签
+  showFooter: boolean;      // 页脚：第几页共几页 + 本页谜号区间
+  startPage: number;        // 起始页码（同一批分次打印时接上一批往下排）
 };
 
 export type AppSettings = {

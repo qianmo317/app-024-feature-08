@@ -92,6 +92,97 @@ test.describe('元宵灯谜库 E2E', () => {
     expect(parseFloat(fontSize)).toBeGreaterThanOrEqual(18.5);
   });
 
+  test('打印字段取舍：作者/出处/难度/标签逐项印上卡片', async ({ page }) => {
+    const csv = [
+      '谜面,谜底,谜目,谜格,作者,出处,难度,适用年龄,标签,备注',
+      '一口咬掉牛尾巴,告,猜一字,无格,王安石,传统字谜,3,通用,字谜、入门,',
+    ].join('\n');
+    await page.goto('/');
+    await page.setInputFiles('input[type=file]', {
+      name: 'fields.csv', mimeType: 'text/csv', buffer: Buffer.from(csv, 'utf8'),
+    });
+    await page.click('button:has-text("确认导入")');
+    await page.goto('/#/print');
+    const card = page.locator('.card').first();
+    // 固定内容始终打印：谜号、谜面、谜目谜格
+    await expect(card.locator('.card-up .card-no')).toHaveText('1');
+    await expect(card).toContainText('一口咬掉牛尾巴');
+    await expect(card).toContainText('猜一字');
+    // 默认不印可选字段
+    await expect(card.locator('.card-extra')).toHaveCount(0);
+    await expect(card).not.toContainText('王安石');
+    // 逐项开启后印上卡片
+    await page.getByLabel('作者', { exact: true }).check();
+    await page.getByLabel('出处', { exact: true }).check();
+    await page.getByLabel('难度', { exact: true }).check();
+    await page.getByLabel('标签', { exact: true }).check();
+    await expect(card.locator('.card-extra')).toContainText('作者：王安石');
+    await expect(card.locator('.card-extra')).toContainText('出处：传统字谜');
+    await expect(card.locator('.card-extra')).toContainText('难度：★★★');
+    await expect(card.locator('.card-extra')).toContainText('#字谜');
+    await expect(card.locator('.card-extra')).toContainText('#入门');
+    // 再关掉作者项即消失，其余保留
+    await page.getByLabel('作者', { exact: true }).uncheck();
+    await expect(card).not.toContainText('王安石');
+    await expect(card.locator('.card-extra')).toContainText('出处：传统字谜');
+  });
+
+  test('页脚页码：第几页/共几页 + 本页谜号区间，续排接上一批', async ({ page }) => {
+    await importSample(page); // 53 条，谜号 1~53
+    await page.goto('/#/print');
+    await page.selectOption('select >> nth=0', 'all');
+    // 默认每页 6 条 → 9 页，页脚默认开启
+    await expect(page.locator('.sheet')).toHaveCount(9);
+    await expect(page.locator('.sheet-footer').first()).toContainText('第 1 页 / 共 9 页');
+    await expect(page.locator('.sheet-footer').first()).toContainText('本页谜号：1–6');
+    await expect(page.locator('.sheet-footer').nth(8)).toContainText('第 9 页 / 共 9 页');
+    await expect(page.locator('.sheet-footer').nth(8)).toContainText('本页谜号：49–53');
+    // 续排：上一批打了 9 页，起始页码填 10，页码接着往下排
+    await page.getByLabel('起始页码').fill('10');
+    await expect(page.locator('.sheet-footer').first()).toContainText('第 10 页 / 共 18 页');
+    await expect(page.locator('.sheet-footer').nth(8)).toContainText('第 18 页 / 共 18 页');
+    // 一键续排：本批打印完，下一批从第 19 页起
+    await page.getByRole('button', { name: /下一批从第 19 页起/ }).click();
+    await expect(page.locator('.sheet-footer').first()).toContainText('第 19 页 / 共 27 页');
+    // 页脚可整体关闭
+    await page.getByLabel(/页脚印/).uncheck();
+    await expect(page.locator('.sheet-footer')).toHaveCount(0);
+  });
+
+  test('打印媒体下谜条与页脚真实可见（回归：整页不被打印样式隐藏）', async ({ page }) => {
+    await importSample(page);
+    await page.goto('/#/print');
+    await page.selectOption('select >> nth=0', 'all');
+    await page.emulateMedia({ media: 'print' });
+    await expect(page.locator('.sheet').first()).toBeVisible();
+    await expect(page.locator('.card').first()).toBeVisible();
+    await expect(page.locator('.sheet-footer').first()).toBeVisible();
+    // 每张纸恰为 A4 高（297mm ≈ 1122.5px），页脚落在页内
+    const geo = await page.locator('.sheet').first().evaluate((el) => {
+      const s = el.getBoundingClientRect();
+      const f = el.querySelector('.sheet-footer')!.getBoundingClientRect();
+      return { sheetH: s.height, sheetBottom: s.bottom, footerBottom: f.bottom };
+    });
+    expect(Math.abs(geo.sheetH - (297 * 96) / 25.4)).toBeLessThan(2);
+    expect(geo.footerBottom).toBeLessThanOrEqual(geo.sheetBottom + 1);
+    await page.emulateMedia({ media: 'screen' });
+  });
+
+  test('每页条数自填：非预设值实时重排并钳制上限', async ({ page }) => {
+    await importSample(page);
+    await page.goto('/#/print');
+    await page.selectOption('select >> nth=0', 'all');
+    const perPage = page.getByLabel(/每页条数/);
+    await perPage.fill('8');
+    await expect(page.locator('.page-head h1')).toContainText('每页 8 条');
+    await expect(page.locator('.sheet')).toHaveCount(7); // 53 条 ÷ 8 → 7 页
+    await perPage.fill('4');
+    await expect(page.locator('.sheet')).toHaveCount(14); // 53 条 ÷ 4 → 14 页
+    await perPage.fill('99'); // 超上限钳为 24
+    await expect(page.locator('.page-head h1')).toContainText('每页 24 条');
+    await expect(page.locator('.sheet')).toHaveCount(3);
+  });
+
   test('现场登记：登记 → 重复登记提示 → 统计', async ({ page }) => {
     await importSample(page);
     await page.click('nav >> text=现场登记');

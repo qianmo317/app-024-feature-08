@@ -5,6 +5,8 @@ export const PAGE_W_MM = 210;
 export const PAGE_H_MM = 297;
 export const PAGE_MARGIN_MM = 10;
 export const GAP_MM = 4;
+export const MAX_PER_PAGE = 24;      // 每页条数自定义上限
+export const FOOTER_RESERVE_MM = 14; // 页脚（页码 + 谜号区间）在版心内预留的高度
 
 export interface PrintLayout {
   cols: number;
@@ -17,9 +19,9 @@ export interface PrintLayout {
   warning?: string;
 }
 
-function available(cols: number, rows: number, gap: number): { w: number; h: number } {
+function available(cols: number, rows: number, gap: number, reserveH: number): { w: number; h: number } {
   const usableW = PAGE_W_MM - 2 * PAGE_MARGIN_MM;
-  const usableH = PAGE_H_MM - 2 * PAGE_MARGIN_MM;
+  const usableH = PAGE_H_MM - 2 * PAGE_MARGIN_MM - reserveH;
   return {
     w: (usableW - (cols - 1) * gap) / cols,
     h: (usableH - (rows - 1) * gap) / rows,
@@ -27,13 +29,14 @@ function available(cols: number, rows: number, gap: number): { w: number; h: num
 }
 
 export function calcLayout(setup: PrintSetup, gap = GAP_MM): PrintLayout {
-  const want = Math.max(1, Math.min(12, Math.floor(setup.perPage)));
+  const want = Math.max(1, Math.min(MAX_PER_PAGE, Math.floor(setup.perPage) || 1));
+  const reserveH = setup.showFooter ? FOOTER_RESERVE_MM : 0;
   let best: PrintLayout | null = null;
   // 枚举列数 1..6，行数 = ceil(want/cols)，取卡片面积最大者（面积相同取更方的）
   for (let cols = 1; cols <= 6; cols++) {
     const rows = Math.ceil(want / cols);
     if (cols * rows < want) continue;
-    const avail = available(cols, rows, gap);
+    const avail = available(cols, rows, gap, reserveH);
     const w = Math.min(setup.cardWmm, avail.w);
     const h = Math.min(setup.cardHmm, avail.h);
     if (w <= 10 || h <= 10) continue;
@@ -49,7 +52,7 @@ export function calcLayout(setup: PrintSetup, gap = GAP_MM): PrintLayout {
     }
   }
   if (!best) {
-    const avail = available(1, 1, gap);
+    const avail = available(1, 1, gap, reserveH);
     best = {
       cols: 1, rows: 1, perPage: 1,
       cardW: Math.min(setup.cardWmm, round2(avail.w)),
@@ -63,6 +66,25 @@ export function calcLayout(setup: PrintSetup, gap = GAP_MM): PrintLayout {
 
 export function pageCount(total: number, perPage: number): number {
   return Math.max(1, Math.ceil(total / perPage));
+}
+
+export interface PageFooter {
+  pageNo: number;      // 本页页码（含起始页码偏移，续打时接上一批）
+  totalPages: number;  // 累计总页数 = 起始页码之前已打印 + 本批页数
+  noFrom: number;      // 本页谜号区间（谜号可不连续，取最小~最大）
+  noTo: number;
+}
+
+/** 页脚信息：第几页/共几页（起始页码续排）与本页谜号区间 */
+export function pageFooter(pageIndex: number, batchPages: number, startPage: number, nos: number[]): PageFooter {
+  const start = Math.max(1, Math.floor(startPage) || 1);
+  const valid = nos.filter((n) => Number.isFinite(n));
+  return {
+    pageNo: start + pageIndex,
+    totalPages: start - 1 + Math.max(1, batchPages),
+    noFrom: valid.length ? Math.min(...valid) : 0,
+    noTo: valid.length ? Math.max(...valid) : 0,
+  };
 }
 
 function round2(n: number): number {

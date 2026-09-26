@@ -81,11 +81,21 @@ export function Settings() {
               <input className="input" type="number" min={30} max={290} value={pr.cardHmm}
                 onChange={(e) => setPr({ ...pr, cardHmm: Math.max(20, Number(e.target.value) || 0) })} />
             </label>
-            <label className="field"><span>每页条数</span>
-              <select className="input" value={pr.perPage} onChange={(e) => setPr({ ...pr, perPage: Number(e.target.value) })}>
-                {[4, 6, 8, 9, 12].map((n) => <option key={n} value={n}>{n}</option>)}
-              </select>
+            <label className="field"><span>每页条数（1~24）</span>
+              <input className="input" type="number" min={1} max={24} value={pr.perPage}
+                onChange={(e) => setPr({ ...pr, perPage: Math.max(1, Math.min(24, Math.floor(Number(e.target.value)) || 1)) })} />
             </label>
+            <label className="field"><span>起始页码</span>
+              <input className="input" type="number" min={1} max={9999} value={pr.startPage}
+                onChange={(e) => setPr({ ...pr, startPage: Math.max(1, Math.floor(Number(e.target.value)) || 1) })} />
+            </label>
+          </div>
+          <div className="btn-row wrap">
+            <label className="check-inline"><input type="checkbox" checked={pr.showAuthor} onChange={(e) => setPr({ ...pr, showAuthor: e.target.checked })} /> 印作者</label>
+            <label className="check-inline"><input type="checkbox" checked={pr.showSource} onChange={(e) => setPr({ ...pr, showSource: e.target.checked })} /> 印出处</label>
+            <label className="check-inline"><input type="checkbox" checked={pr.showDifficulty} onChange={(e) => setPr({ ...pr, showDifficulty: e.target.checked })} /> 印难度</label>
+            <label className="check-inline"><input type="checkbox" checked={pr.showTags} onChange={(e) => setPr({ ...pr, showTags: e.target.checked })} /> 印标签</label>
+            <label className="check-inline"><input type="checkbox" checked={pr.showFooter} onChange={(e) => setPr({ ...pr, showFooter: e.target.checked })} /> 页脚页码</label>
           </div>
           <label className="field"><span>落款文字</span>
             <input className="input" value={pr.hostLine} onChange={(e) => setPr({ ...pr, hostLine: e.target.value })} />
