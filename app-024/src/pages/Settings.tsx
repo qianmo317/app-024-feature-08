@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useAppState } from '../ui/router';
 import { riddleToRow, stringifyCSV, withBOM, RIDDLE_CSV_HEADERS } from '../lib/csv';
 import { downloadText } from '../lib/format';
+import { MAX_PER_PAGE } from '../lib/print';
 import { exportFileName, store } from '../lib/store';
 
 export function Settings() {
@@ -81,11 +82,18 @@ export function Settings() {
               <input className="input" type="number" min={30} max={290} value={pr.cardHmm}
                 onChange={(e) => setPr({ ...pr, cardHmm: Math.max(20, Number(e.target.value) || 0) })} />
             </label>
-            <label className="field"><span>每页条数</span>
-              <select className="input" value={pr.perPage} onChange={(e) => setPr({ ...pr, perPage: Number(e.target.value) })}>
-                {[4, 6, 8, 9, 12].map((n) => <option key={n} value={n}>{n}</option>)}
-              </select>
+            <label className="field"><span>每页条数（1–{MAX_PER_PAGE}）</span>
+              <input className="input" type="number" min={1} max={MAX_PER_PAGE} value={pr.perPage}
+                onChange={(e) => setPr({ ...pr, perPage: Math.max(1, Math.min(MAX_PER_PAGE, Math.floor(Number(e.target.value)) || 1)) })} />
             </label>
+          </div>
+          <div className="btn-row wrap">
+            <span className="muted small">卡片加印：</span>
+            <label className="check-inline"><input type="checkbox" checked={pr.showAuthor} onChange={(e) => setPr({ ...pr, showAuthor: e.target.checked })} /> 作者</label>
+            <label className="check-inline"><input type="checkbox" checked={pr.showSource} onChange={(e) => setPr({ ...pr, showSource: e.target.checked })} /> 出处</label>
+            <label className="check-inline"><input type="checkbox" checked={pr.showDifficulty} onChange={(e) => setPr({ ...pr, showDifficulty: e.target.checked })} /> 难度</label>
+            <label className="check-inline"><input type="checkbox" checked={pr.showTags} onChange={(e) => setPr({ ...pr, showTags: e.target.checked })} /> 标签</label>
+            <label className="check-inline"><input type="checkbox" checked={pr.showFooter} onChange={(e) => setPr({ ...pr, showFooter: e.target.checked })} /> 页脚页码</label>
           </div>
           <label className="field"><span>落款文字</span>
             <input className="input" value={pr.hostLine} onChange={(e) => setPr({ ...pr, hostLine: e.target.value })} />

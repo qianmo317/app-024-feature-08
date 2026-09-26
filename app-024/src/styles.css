@@ -206,6 +206,13 @@ textarea.input { resize: vertical; }
   width: 210mm; min-height: 297mm; background: #fff; margin: 0 auto 8mm;
   padding: 10mm; display: flex; flex-wrap: wrap; gap: 4mm; align-content: flex-start;
   box-shadow: 0 1px 6px rgba(0,0,0,.15); border: 1px solid var(--line);
+  position: relative;
+}
+/* 页脚：落在页边距空白区内（绝对定位，不占卡片网格），黑白打印 */
+.sheet-footer {
+  position: absolute; left: 10mm; right: 10mm; bottom: 5mm;
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: 9pt; color: #000; line-height: 1.4;
 }
 .card-slot { visibility: hidden; }
 .card {
@@ -218,6 +225,8 @@ textarea.input { resize: vertical; }
 .card-no { font-size: 26pt; font-weight: 800; color: #000; line-height: 1.1; }
 .card-surface { font-size: 14pt; font-weight: 600; color: #000; margin-top: 2mm; line-height: 1.45; flex: 1; }
 .card-meta { font-size: 10.5pt; color: #000; margin-top: 2mm; }
+.card-extra { font-size: 9pt; color: #000; margin-top: 1mm; line-height: 1.4; }
+.card-extra .stars { color: #000; }
 .card-host { font-size: 9.5pt; color: #000; margin-top: 1.5mm; text-align: right; }
 .card-tear {
   border-top: 1px dashed #aaa; margin: 2mm -1mm; position: relative;

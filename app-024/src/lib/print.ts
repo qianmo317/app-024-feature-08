@@ -5,6 +5,8 @@ export const PAGE_W_MM = 210;
 export const PAGE_H_MM = 297;
 export const PAGE_MARGIN_MM = 10;
 export const GAP_MM = 4;
+/** 每页条数上限：自由填数，A4 版面 6 列 × 4 行 = 24 条仍可容纳（卡片自动缩小） */
+export const MAX_PER_PAGE = 24;
 
 export interface PrintLayout {
   cols: number;
@@ -27,7 +29,7 @@ function available(cols: number, rows: number, gap: number): { w: number; h: num
 }
 
 export function calcLayout(setup: PrintSetup, gap = GAP_MM): PrintLayout {
-  const want = Math.max(1, Math.min(12, Math.floor(setup.perPage)));
+  const want = Math.max(1, Math.min(MAX_PER_PAGE, Math.floor(setup.perPage) || 1));
   let best: PrintLayout | null = null;
   // 枚举列数 1..6，行数 = ceil(want/cols)，取卡片面积最大者（面积相同取更方的）
   for (let cols = 1; cols <= 6; cols++) {
@@ -63,6 +65,25 @@ export function calcLayout(setup: PrintSetup, gap = GAP_MM): PrintLayout {
 
 export function pageCount(total: number, perPage: number): number {
   return Math.max(1, Math.ceil(total / perPage));
+}
+
+/** 页脚「谜号区间」文案：单条只显示一个号，空页返回空串 */
+export function noRangeText(nos: number[]): string {
+  if (!nos.length) return '';
+  const lo = Math.min(...nos);
+  const hi = Math.max(...nos);
+  return lo === hi ? `谜号 ${lo}` : `谜号 ${lo}–${hi}`;
+}
+
+/**
+ * 页脚「第 X 页 / 共 Y 页」文案。
+ * pageStart 为起始页码（≥1）：同一批谜条分两次打印时，
+ * 第二批把 pageStart 设为上一批末页 +1，页码即可接着往下排，
+ * 「共 Y 页」也算入之前已印的页数（= pageStart - 1 + 本批页数）。
+ */
+export function pageNoText(pageIndex: number, sheetCount: number, pageStart: number): string {
+  const start = Math.max(1, Math.floor(pageStart) || 1);
+  return `第 ${start + pageIndex} 页 / 共 ${start + sheetCount - 1} 页`;
 }
 
 function round2(n: number): number {

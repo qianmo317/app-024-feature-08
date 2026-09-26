@@ -92,6 +92,55 @@ test.describe('元宵灯谜库 E2E', () => {
     expect(parseFloat(fontSize)).toBeGreaterThanOrEqual(18.5);
   });
 
+  test('出条打印：卡片加印选项 + 自由每页条数 + 页脚页码续批', async ({ page }) => {
+    // 7 条：作者/出处/难度/标签齐全
+    const lines = ['谜面,谜底,谜目,谜格,作者,出处,难度,适用年龄,标签,备注'];
+    for (let i = 1; i <= 7; i++) lines.push(`谜面${i},答${i},猜一字,无格,作者${i},出处${i},2,通用,标签${i},`);
+    await page.goto('/');
+    await page.setInputFiles('input[type=file]', {
+      name: 'opt.csv', mimeType: 'text/csv', buffer: Buffer.from(lines.join('\n'), 'utf8'),
+    });
+    await page.click('button:has-text("确认导入")');
+    await expect(page.locator('.page-head h1')).toContainText('7 条');
+    await page.goto('/#/print');
+    await page.selectOption('select >> nth=0', 'all');
+
+    // 默认不加印：卡片上没有可选内容
+    await expect(page.locator('.card').first().locator('.card-extra')).toHaveCount(0);
+    // 逐项开启：作者 / 出处 / 难度 / 标签
+    for (const name of ['作者', '出处', '难度', '标签']) {
+      await page.locator('.check-inline', { hasText: name }).locator('input').first().check();
+    }
+    const firstCard = page.locator('.card').first();
+    await expect(firstCard).toContainText('作者：作者1');
+    await expect(firstCard).toContainText('出处：出处1');
+    await expect(firstCard).toContainText('难度：★★☆');
+    await expect(firstCard).toContainText('标签：标签1');
+
+    // 每页条数自由填数：5 → 实际 3 列 × 2 行 = 6 条/页，7 条分 2 页
+    await page.locator('input[type=number]').nth(0).fill('5');
+    await expect(page.locator('.page-head h1')).toContainText('每页 6 条');
+    await expect(page.locator('.page-head h1')).toContainText('共 2 页');
+    await expect(page.locator('.sheet')).toHaveCount(2);
+
+    // 页脚：第 X 页 / 共 Y 页 + 本页谜号区间（末页单条只显示一个号）
+    await expect(page.locator('.sheet-footer')).toHaveCount(2);
+    await expect(page.locator('.sheet-footer').nth(0)).toContainText('第 1 页 / 共 2 页');
+    await expect(page.locator('.sheet-footer').nth(0)).toContainText('谜号 1–6');
+    await expect(page.locator('.sheet-footer').nth(1)).toContainText('第 2 页 / 共 2 页');
+    await expect(page.locator('.sheet-footer').nth(1)).toContainText('谜号 7');
+
+    // 分批续打：起始页码填 11 → 页码接着上一批往下排，总页数算入已印页数
+    await page.locator('input[type=number]').nth(3).fill('11');
+    await expect(page.locator('.sheet-footer').nth(0)).toContainText('第 11 页 / 共 12 页');
+    await expect(page.locator('.sheet-footer').nth(1)).toContainText('第 12 页 / 共 12 页');
+    await expect(page.getByTestId('batch-pages')).toContainText('下一批「起始页码」填 13');
+
+    // 关掉页脚后不再渲染
+    await page.locator('.check-inline', { hasText: '页脚（页码 + 谜号区间）' }).locator('input').uncheck();
+    await expect(page.locator('.sheet-footer')).toHaveCount(0);
+  });
+
   test('现场登记：登记 → 重复登记提示 → 统计', async ({ page }) => {
     await importSample(page);
     await page.click('nav >> text=现场登记');

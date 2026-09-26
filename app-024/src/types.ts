@@ -50,6 +50,14 @@ export type PrintSetup = {
   showAnswerSlip: boolean;  // 同页双联：下联回收联（含谜底）
   showCutLine: boolean;
   hostLine: string;
+  // 卡片可选内容（谜号/谜面/谜目谜格/落款恒印，以下逐项取舍）
+  showAuthor: boolean;
+  showSource: boolean;
+  showDifficulty: boolean;
+  showTags: boolean;
+  // 页脚：第 X 页 / 共 Y 页 + 本页谜号区间
+  showFooter: boolean;
+  pageStart: number;        // 起始页码：分批打印时接着上一批往下排
 };
 
 export type AppSettings = {
